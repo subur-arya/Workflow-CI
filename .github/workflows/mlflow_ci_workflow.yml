@@ -1,0 +1,150 @@
+name: MLflow CI Workflow
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'MLProject/**'
+  workflow_dispatch:
+    inputs:
+      n_estimators:
+        description: 'Number of trees'
+        required: false
+        default: '200'
+      max_depth:
+        description: 'Maximum depth'
+        required: false
+        default: '15'
+
+jobs:
+  train-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-activate-base: true
+        python-version: 3.12
+        
+    - name: Install MLflow
+      run: |
+        pip install mlflow==2.19.0
+        
+    - name: Run MLflow Project
+      run: |
+        cd MLProject
+        mlflow run . \
+          --env-manager=local \
+          -P n_estimators=${{ github.event.inputs.n_estimators || 200 }} \
+          -P max_depth=${{ github.event.inputs.max_depth || 15 }}
+          
+    - name: List artifacts
+      run: |
+        echo "Listing generated artifacts..."
+        ls -la MLProject/
+        ls -la MLProject/mlruns/ || echo "No mlruns directory"
+        
+    - name: Upload model artifacts to GitHub
+      uses: actions/upload-artifact@v3
+      with:
+        name: model-artifacts
+        path: |
+          MLProject/model/
+          MLProject/confusion_matrix.png
+          MLProject/feature_importance.png
+        retention-days: 30
+        
+    - name: Commit artifacts to repository
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Create artifacts directory if not exists
+        mkdir -p artifacts
+        
+        # Copy artifacts
+        cp -r MLProject/model artifacts/ || echo "Model not found"
+        cp MLProject/confusion_matrix.png artifacts/ || echo "Confusion matrix not found"
+        cp MLProject/feature_importance.png artifacts/ || echo "Feature importance not found"
+        
+        # Add and commit
+        git add artifacts/ || true
+        git diff --quiet && git diff --staged --quiet || git commit -m "Auto: Update model artifacts [skip ci]"
+        
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
+        
+    # ========================================================================
+    # DOCKER BUILD & PUSH (For Advanced - 4 pts)
+    # ========================================================================
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+      
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        
+    - name: Build Docker image with MLflow
+      run: |
+        cd MLProject
+        
+        # Build docker image using mlflow
+        mlflow models build-docker \
+          --model-uri ./model \
+          --name ${{ secrets.DOCKER_USERNAME }}/telco-churn-model:latest
+          
+    - name: Push Docker image to Docker Hub
+      run: |
+        docker push ${{ secrets.DOCKER_USERNAME }}/telco-churn-model:latest
+        
+    - name: Save Docker Hub link
+      run: |
+        echo "https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/telco-churn-model" > MLProject/DockerHub_Link.txt
+        cat MLProject/DockerHub_Link.txt
+        
+    - name: Commit Docker Hub link
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add MLProject/DockerHub_Link.txt || true
+        git diff --quiet && git diff --staged --quiet || git commit -m "Auto: Add Docker Hub link [skip ci]"
+        
+    - name: Push Docker Hub link
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
+        
+    - name: Workflow Summary
+      run: |
+        echo "## 🎉 Workflow Completed Successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Model Training" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Model trained with MLflow Project" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Artifacts saved to repository" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Docker image built and pushed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🐳 Docker Image" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image:** ${{ secrets.DOCKER_USERNAME }}/telco-churn-model:latest" >> $GITHUB_STEP_SUMMARY
+        echo "- **Link:** https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/telco-churn-model" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "1. Check artifacts in the 'artifacts' directory" >> $GITHUB_STEP_SUMMARY
+        echo "2. Pull Docker image: \`docker pull ${{ secrets.DOCKER_USERNAME }}/telco-churn-model:latest\`" >> $GITHUB_STEP_SUMMARY
+        echo "3. Run model: \`docker run -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/telco-churn-model:latest\`" >> $GITHUB_STEP_SUMMARY
