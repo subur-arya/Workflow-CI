@@ -53,6 +53,12 @@ def plot_feature_importance(model, feature_names, save_path='feature_importance.
 
 
 if __name__ == "__main__":
+    # Set MLflow tracking URI to local directory (FIX for Permission Denied)
+    import os
+    tracking_uri = os.path.abspath("./mlruns")
+    mlflow.set_tracking_uri(f"file://{tracking_uri}")
+    print(f"MLflow tracking URI: {mlflow.get_tracking_uri()}")
+    
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--n_estimators', type=int, default=200)
