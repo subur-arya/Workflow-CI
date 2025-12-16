@@ -1,6 +1,6 @@
 """
-MLflow Project - Training Script (NO RUN MANAGEMENT)
-MLflow Project handles run lifecycle - we just log to it!
+MLflow Project - Ultra Simple Training Script
+No tracking URI setting - let MLflow Project handle everything!
 """
 
 import pandas as pd
@@ -24,7 +24,6 @@ warnings.filterwarnings('ignore')
 def plot_confusion_matrix(y_test, y_pred, save_path='confusion_matrix.png'):
     """Plot and save confusion matrix"""
     cm = confusion_matrix(y_test, y_pred)
-    
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
     plt.title('Confusion Matrix', fontsize=14, fontweight='bold')
@@ -33,7 +32,6 @@ def plot_confusion_matrix(y_test, y_pred, save_path='confusion_matrix.png'):
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close()
-    
     return cm
 
 
@@ -41,7 +39,6 @@ def plot_feature_importance(model, feature_names, save_path='feature_importance.
     """Plot and save feature importance"""
     importances = model.feature_importances_
     indices = np.argsort(importances)[::-1][:top_n]
-    
     plt.figure(figsize=(10, 6))
     plt.title(f'Top {top_n} Feature Importances', fontsize=14, fontweight='bold')
     plt.bar(range(top_n), importances[indices], color='skyblue')
@@ -53,12 +50,6 @@ def plot_feature_importance(model, feature_names, save_path='feature_importance.
 
 
 if __name__ == "__main__":
-    # Set MLflow tracking URI to local directory (FIX for Permission Denied)
-    import os
-    tracking_uri = os.path.abspath("./mlruns")
-    mlflow.set_tracking_uri(f"file://{tracking_uri}")
-    print(f"MLflow tracking URI: {mlflow.get_tracking_uri()}")
-    
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--n_estimators', type=int, default=200)
@@ -80,10 +71,7 @@ if __name__ == "__main__":
     print(f"random_state:      {args.random_state}")
     print("="*80)
     
-    # ========================================================================
-    # LOAD DATA
-    # ========================================================================
-    
+    # Load data
     print("\n" + "="*80)
     print("LOADING DATA")
     print("="*80)
@@ -93,7 +81,6 @@ if __name__ == "__main__":
     
     y_train = X_train['Churn']
     X_train = X_train.drop('Churn', axis=1)
-    
     y_test = X_test['Churn']
     X_test = X_test.drop('Churn', axis=1)
     
@@ -101,10 +88,7 @@ if __name__ == "__main__":
     print(f"✓ Testing data: {X_test.shape}")
     print("="*80)
     
-    # ========================================================================
-    # TRAIN MODEL
-    # ========================================================================
-    
+    # Train model
     print("\n" + "="*80)
     print("TRAINING MODEL")
     print("="*80)
@@ -123,29 +107,20 @@ if __name__ == "__main__":
     model.fit(X_train, y_train)
     print("✓ Model trained successfully!")
     
-    # ========================================================================
-    # PREDICTIONS
-    # ========================================================================
-    
+    # Predictions
     print("\nMaking predictions...")
     y_pred = model.predict(X_test)
     y_pred_proba = model.predict_proba(X_test)[:, 1]
     print("✓ Predictions complete!")
     
-    # ========================================================================
-    # CALCULATE METRICS
-    # ========================================================================
-    
+    # Calculate metrics
     print("\nCalculating metrics...")
-    
-    # Standard metrics
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred, zero_division=0)
     recall = recall_score(y_test, y_pred, zero_division=0)
     f1 = f1_score(y_test, y_pred, zero_division=0)
     roc_auc = roc_auc_score(y_test, y_pred_proba)
     
-    # Additional metrics
     mcc = matthews_corrcoef(y_test, y_pred)
     kappa = cohen_kappa_score(y_test, y_pred)
     cm = confusion_matrix(y_test, y_pred)
@@ -155,15 +130,11 @@ if __name__ == "__main__":
     
     print("✓ Metrics calculated!")
     
-    # ========================================================================
-    # LOG TO MLFLOW (Active run already exists from MLflow Project!)
-    # ========================================================================
-    
+    # Log to MLflow
     print("\n" + "="*80)
     print("LOGGING TO MLFLOW")
     print("="*80)
     
-    # Log parameters
     print("Logging parameters...")
     mlflow.log_params({
         'n_estimators': args.n_estimators,
@@ -178,7 +149,6 @@ if __name__ == "__main__":
     })
     print("✓ Parameters logged!")
     
-    # Log metrics
     print("Logging metrics...")
     mlflow.log_metrics({
         'accuracy': accuracy,
@@ -197,10 +167,7 @@ if __name__ == "__main__":
     })
     print("✓ Metrics logged!")
     
-    # ========================================================================
-    # PRINT RESULTS
-    # ========================================================================
-    
+    # Print results
     print("\n" + "="*80)
     print("MODEL PERFORMANCE")
     print("="*80)
@@ -220,65 +187,65 @@ if __name__ == "__main__":
     print(f"  FN: {fn:4d}  |  TP: {tp:4d}")
     print("="*80)
     
-    # ========================================================================
-    # GENERATE VISUALIZATIONS
-    # ========================================================================
-    
+    # Generate visualizations (SAVE FIRST, LOG LATER!)
     print("\n" + "="*80)
     print("GENERATING VISUALIZATIONS")
     print("="*80)
     
-    # Confusion Matrix
     print("Creating confusion matrix...")
     plot_confusion_matrix(y_test, y_pred, 'confusion_matrix.png')
-    mlflow.log_artifact('confusion_matrix.png')
-    print("✓ Confusion matrix saved & logged!")
+    print("✓ Confusion matrix saved!")
     
-    # Feature Importance
     print("Creating feature importance plot...")
     plot_feature_importance(model, X_train.columns.tolist(), 'feature_importance.png')
-    mlflow.log_artifact('feature_importance.png')
-    print("✓ Feature importance saved & logged!")
+    print("✓ Feature importance saved!")
     
-    # ========================================================================
-    # SAVE MODEL
-    # ========================================================================
+    # Try to log artifacts (with error handling)
+    print("\nLogging artifacts to MLflow...")
+    try:
+        mlflow.log_artifact('confusion_matrix.png')
+        print("✓ Confusion matrix logged!")
+    except Exception as e:
+        print(f"⚠ Could not log confusion matrix: {e}")
     
+    try:
+        mlflow.log_artifact('feature_importance.png')
+        print("✓ Feature importance logged!")
+    except Exception as e:
+        print(f"⚠ Could not log feature importance: {e}")
+    
+    # Save model
     print("\n" + "="*80)
     print("SAVING MODEL")
     print("="*80)
     
-    # Log model to MLflow
-    print("Logging model to MLflow...")
-    mlflow.sklearn.log_model(
-        model, 
-        "model",
-        input_example=X_train.iloc[:5],
-        signature=mlflow.models.infer_signature(X_train, y_pred)
-    )
-    print("✓ Model logged to MLflow!")
-    
-    # Save model locally
     print("Saving model locally...")
-    mlflow.sklearn.save_model(model, "model")
-    print("✓ Model saved to: ./model/")
+    try:
+        mlflow.sklearn.save_model(model, "model")
+        print("✓ Model saved to: ./model/")
+    except Exception as e:
+        print(f"⚠ Could not save model: {e}")
     
-    # ========================================================================
-    # DONE!
-    # ========================================================================
+    # Try to log model
+    print("Logging model to MLflow...")
+    try:
+        mlflow.sklearn.log_model(
+            model, 
+            "model",
+            input_example=X_train.iloc[:5]
+        )
+        print("✓ Model logged to MLflow!")
+    except Exception as e:
+        print(f"⚠ Could not log model: {e}")
     
+    # Done
     print("\n" + "="*80)
-    print("✓ TRAINING COMPLETED SUCCESSFULLY!")
+    print("✓ TRAINING COMPLETED!")
     print("="*80)
     
-    # Get active run info
-    active_run = mlflow.active_run()
-    if active_run:
-        print(f"\n✓ MLflow Run ID: {active_run.info.run_id}")
-        print(f"✓ Experiment: {active_run.info.experiment_id}")
-    
-    print("\n✓ All artifacts generated:")
-    print("  - model/")
+    print("\n✓ Artifacts generated:")
     print("  - confusion_matrix.png")
     print("  - feature_importance.png")
-    print("\n✓ Ready for deployment!")
+    print("  - model/ (if save succeeded)")
+    
+    print("\n✓ Script execution complete!")
