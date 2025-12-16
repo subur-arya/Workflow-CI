@@ -89,166 +89,93 @@ def plot_feature_importance(model, feature_names, save_path='feature_importance.
 
 def train_model(n_estimators=200, max_depth=15, min_samples_split=2, 
                 min_samples_leaf=1, max_features='sqrt', random_state=42):
-    """
-    Train Random Forest model with specified parameters
-    
-    Args:
-        n_estimators (int): Number of trees
-        max_depth (int): Maximum depth of trees
-        min_samples_split (int): Minimum samples to split node
-        min_samples_leaf (int): Minimum samples in leaf
-        max_features (str): Number of features to consider
-        random_state (int): Random seed
-    """
-    
+
     print("\n" + "="*80)
     print("MLFLOW PROJECT - MODEL TRAINING")
     print("="*80)
-    
+
     # Load data
     X_train, X_test, y_train, y_test = load_data()
-    
-    # Set MLflow tracking
+
+    # Set experiment (AMAN)
     mlflow.set_experiment("Telco_Churn_CI_Workflow")
-    
-    print("\n[1] Starting MLflow Run...")
-    with mlflow.start_run(run_name="RandomForest_CI", nested=True):
-        
-        # Log parameters
-        print("\n[2] Logging parameters...")
-        params = {
-            'n_estimators': n_estimators,
-            'max_depth': max_depth,
-            'min_samples_split': min_samples_split,
-            'min_samples_leaf': min_samples_leaf,
-            'max_features': max_features,
-            'random_state': random_state,
-            'total_features': X_train.shape[1],
-            'training_samples': len(X_train),
-            'testing_samples': len(X_test)
-        }
-        mlflow.log_params(params)
-        print("✓ Parameters logged!")
-        
-        # Initialize and train model
-        print("\n[3] Training Random Forest model...")
-        model = RandomForestClassifier(
-            n_estimators=n_estimators,
-            max_depth=max_depth,
-            min_samples_split=min_samples_split,
-            min_samples_leaf=min_samples_leaf,
-            max_features=max_features,
-            random_state=random_state,
-            n_jobs=-1
-        )
-        
-        model.fit(X_train, y_train)
-        print("✓ Model trained successfully!")
-        
-        # Make predictions
-        print("\n[4] Making predictions...")
-        y_pred = model.predict(X_test)
-        y_pred_proba = model.predict_proba(X_test)[:, 1]
-        
-        # Calculate metrics
-        print("\n[5] Calculating metrics...")
-        
-        # Standard metrics
-        accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred)
-        recall = recall_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred)
-        roc_auc = roc_auc_score(y_test, y_pred_proba)
-        
-        # Additional metrics
-        mcc = matthews_corrcoef(y_test, y_pred)
-        kappa = cohen_kappa_score(y_test, y_pred)
-        cm = confusion_matrix(y_test, y_pred)
-        tn, fp, fn, tp = cm.ravel()
-        specificity = tn / (tn + fp)
-        npv = tn / (tn + fn) if (tn + fn) > 0 else 0
-        
-        # Log all metrics
-        print("\n[6] Logging metrics...")
-        metrics = {
-            'accuracy': accuracy,
-            'precision': precision,
-            'recall': recall,
-            'f1_score': f1,
-            'roc_auc': roc_auc,
-            'matthews_corrcoef': mcc,
-            'cohen_kappa': kappa,
-            'specificity': specificity,
-            'negative_predictive_value': npv,
-            'true_negatives': int(tn),
-            'false_positives': int(fp),
-            'false_negatives': int(fn),
-            'true_positives': int(tp)
-        }
-        mlflow.log_metrics(metrics)
-        print("✓ All metrics logged!")
-        
-        # Print metrics
-        print("\n" + "="*80)
-        print("MODEL PERFORMANCE")
-        print("="*80)
-        print("STANDARD METRICS:")
-        print(f"  Accuracy:   {accuracy:.4f}")
-        print(f"  Precision:  {precision:.4f}")
-        print(f"  Recall:     {recall:.4f}")
-        print(f"  F1-Score:   {f1:.4f}")
-        print(f"  ROC-AUC:    {roc_auc:.4f}")
-        print("\nADDITIONAL METRICS:")
-        print(f"  Matthews CC: {mcc:.4f}")
-        print(f"  Cohen Kappa: {kappa:.4f}")
-        print(f"  Specificity: {specificity:.4f}")
-        print(f"  NPV:         {npv:.4f}")
-        print("\nCONFUSION MATRIX:")
-        print(f"  TN: {tn:4d}  |  FP: {fp:4d}")
-        print(f"  FN: {fn:4d}  |  TP: {tp:4d}")
-        print("="*80)
-        
-        # Generate visualizations
-        print("\n[7] Generating visualizations...")
-        
-        # Confusion Matrix
-        cm_path = 'confusion_matrix.png'
-        plot_confusion_matrix(y_test, y_pred, cm_path)
-        mlflow.log_artifact(cm_path)
-        print(f"✓ Logged: {cm_path}")
-        
-        # Feature Importance
-        fi_path = 'feature_importance.png'
-        plot_feature_importance(model, X_train.columns.tolist(), fi_path)
-        mlflow.log_artifact(fi_path)
-        print(f"✓ Logged: {fi_path}")
-        
-        # Log model
-        print("\n[8] Logging model...")
-        mlflow.sklearn.log_model(
-            model, 
-            "model",
-            input_example=X_train.iloc[:5],
-            signature=mlflow.models.infer_signature(X_train, y_pred)
-        )
-        print("✓ Model logged!")
-        
-        # Save model locally for Docker
-        print("\n[9] Saving model locally...")
-        model_path = "model"
-        mlflow.sklearn.save_model(model, model_path)
-        print(f"✓ Model saved to: {model_path}")
-        
-        # Get run info
-        run = mlflow.active_run()
-        print(f"\n✓ MLflow Run ID: {run.info.run_id}")
-        print(f"✓ Artifact URI: {run.info.artifact_uri}")
-        
-        return run.info.run_id
-    
-    print("\n" + "="*80)
-    print("TRAINING COMPLETED!")
-    print("="*80)
+
+    print("\n[1] Using MLflow run created by Project/CI...")
+
+    # ❌ JANGAN start_run()
+
+    # Log parameters
+    print("\n[2] Logging parameters...")
+    mlflow.log_params({
+        'n_estimators': n_estimators,
+        'max_depth': max_depth,
+        'min_samples_split': min_samples_split,
+        'min_samples_leaf': min_samples_leaf,
+        'max_features': max_features,
+        'random_state': random_state,
+        'total_features': X_train.shape[1],
+        'training_samples': len(X_train),
+        'testing_samples': len(X_test)
+    })
+
+    # Train model
+    print("\n[3] Training model...")
+    model = RandomForestClassifier(
+        n_estimators=n_estimators,
+        max_depth=max_depth,
+        min_samples_split=min_samples_split,
+        min_samples_leaf=min_samples_leaf,
+        max_features=max_features,
+        random_state=random_state,
+        n_jobs=-1
+    )
+    model.fit(X_train, y_train)
+
+    # Predict
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)[:, 1]
+
+    # Metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    roc_auc = roc_auc_score(y_test, y_pred_proba)
+
+    mlflow.log_metrics({
+        'accuracy': accuracy,
+        'precision': precision,
+        'recall': recall,
+        'f1_score': f1,
+        'roc_auc': roc_auc
+    })
+
+    # Artifacts
+    cm_path = "confusion_matrix.png"
+    plot_confusion_matrix(y_test, y_pred, cm_path)
+    mlflow.log_artifact(cm_path)
+
+    fi_path = "feature_importance.png"
+    plot_feature_importance(model, X_train.columns.tolist(), fi_path)
+    mlflow.log_artifact(fi_path)
+
+    # Log model
+    mlflow.sklearn.log_model(
+        model,
+        "model",
+        input_example=X_train.iloc[:5],
+        signature=mlflow.models.infer_signature(X_train, y_pred)
+    )
+
+    # Save local
+    mlflow.sklearn.save_model(model, "model")
+
+    run = mlflow.active_run()
+    print(f"\n✓ Run ID: {run.info.run_id}")
+    print(f"✓ Artifact URI: {run.info.artifact_uri}")
+
+    return run.info.run_id
+
 
 
 if __name__ == "__main__":
