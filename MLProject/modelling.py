@@ -112,7 +112,7 @@ def train_model(n_estimators=200, max_depth=15, min_samples_split=2,
     mlflow.set_experiment("Telco_Churn_CI_Workflow")
     
     print("\n[1] Starting MLflow Run...")
-    with mlflow.start_run(run_name="RandomForest_CI"):
+    with mlflow.start_run(run_name="RandomForest_CI", nested=True):
         
         # Log parameters
         print("\n[2] Logging parameters...")
