@@ -1,0 +1,46 @@
+artifact_path: model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.7
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+mlflow_version: 2.19.0
+model_size_bytes: 30419759
+model_uuid: db4c8b0137494219879fe3d0eac13ef3
+run_id: c3ec6e8db7bb426b94a3b8b04af0c5cd
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "long", "name": "gender", "required": true}, {"type": "double",
+    "name": "SeniorCitizen", "required": true}, {"type": "long", "name": "Partner",
+    "required": true}, {"type": "long", "name": "Dependents", "required": true}, {"type":
+    "double", "name": "tenure", "required": true}, {"type": "long", "name": "PhoneService",
+    "required": true}, {"type": "long", "name": "MultipleLines", "required": true},
+    {"type": "long", "name": "OnlineSecurity", "required": true}, {"type": "long",
+    "name": "OnlineBackup", "required": true}, {"type": "long", "name": "DeviceProtection",
+    "required": true}, {"type": "long", "name": "TechSupport", "required": true},
+    {"type": "long", "name": "StreamingTV", "required": true}, {"type": "long", "name":
+    "StreamingMovies", "required": true}, {"type": "long", "name": "PaperlessBilling",
+    "required": true}, {"type": "double", "name": "MonthlyCharges", "required": true},
+    {"type": "double", "name": "TotalCharges", "required": true}, {"type": "boolean",
+    "name": "InternetService_Fiber optic", "required": true}, {"type": "boolean",
+    "name": "InternetService_No", "required": true}, {"type": "boolean", "name": "Contract_One
+    year", "required": true}, {"type": "boolean", "name": "Contract_Two year", "required":
+    true}, {"type": "boolean", "name": "PaymentMethod_Credit card (automatic)", "required":
+    true}, {"type": "boolean", "name": "PaymentMethod_Electronic check", "required":
+    true}, {"type": "boolean", "name": "PaymentMethod_Mailed check", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+utc_time_created: '2025-12-15 02:50:41.272481'

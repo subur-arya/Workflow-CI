@@ -1,0 +1,15 @@
+artifact_uri: file:///D:/kuliah/semester%205/ML%20rudh/Workflow-CI/MLProject/mlruns/0/8c4b88ef39914905a7c526354bd8b5d8/artifacts
+end_time: 1765764068457
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 8c4b88ef39914905a7c526354bd8b5d8
+run_name: clumsy-duck-943
+run_uuid: 8c4b88ef39914905a7c526354bd8b5d8
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1765764068176
+status: 4
+tags: []
+user_id: Arya

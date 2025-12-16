@@ -1,0 +1,15 @@
+artifact_uri: file:///D:/kuliah/semester%205/ML%20rudh/Workflow-CI/MLProject/mlruns/823964335663129144/77bb3b0ce9b544d4b92ec1b4c46784bf/artifacts
+end_time: 1765764256040
+entry_point_name: ''
+experiment_id: '823964335663129144'
+lifecycle_stage: active
+run_id: 77bb3b0ce9b544d4b92ec1b4c46784bf
+run_name: RandomForest_CI
+run_uuid: 77bb3b0ce9b544d4b92ec1b4c46784bf
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1765764239312
+status: 3
+tags: []
+user_id: Arya
